@@ -57,7 +57,11 @@ def get_chapters(book_url: str, custom_folder: Path | None = None) -> None:
 
     o = urlparse(book_url)
     logging.debug(f"Custom folder provided: {custom_folder}")
-    download_folder = Path(custom_folder).joinpath(Path(o.path).name) if custom_folder else Path.cwd().joinpath(Path(o.path).name)
+    download_folder = (
+        Path(custom_folder).joinpath(Path(o.path).name)
+        if custom_folder
+        else Path.cwd().joinpath(Path(o.path).name)
+    )
 
     logging.info(f"Download folder: {download_folder}")
 
