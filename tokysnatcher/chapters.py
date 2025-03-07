@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from re import search
 from urllib.parse import urlparse
+import concurrent.futures
 
 from gazpacho import Soup, get
 from json5 import loads
@@ -72,14 +73,22 @@ def get_chapters(book_url: str, custom_folder: Path | None = None) -> None:
         return
 
     try:
-        for item in chapters:
-            download(
-                MEDIA_URL + item["url"],
-                download_folder.joinpath(
-                    f"{SLASH_REPLACE_STRING.join(item['name'].split('/'))}.mp3"
-                ),
-            )
-            logging.info(f"Downloaded: {item['name']}")
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = []
+            for item in chapters:
+                futures.append(
+                    executor.submit(
+                        download,
+                        MEDIA_URL + item["url"],
+                        download_folder.joinpath(
+                            f"{SLASH_REPLACE_STRING.join(item['name'].split('/'))}.mp3"
+                        ),
+                    )
+                )
+
+            for future, item in zip(futures, chapters):
+                future.result()
+                logging.info(f"Downloaded: {item['name']}")
     except RuntimeError:
         logging.exception(f"Error downloading chapter: {item['name']}")
         logging.debug("Switching to fallback source.")
